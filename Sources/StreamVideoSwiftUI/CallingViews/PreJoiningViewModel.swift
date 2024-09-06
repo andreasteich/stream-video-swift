@@ -19,11 +19,12 @@ public class LobbyViewModel: ObservableObject, @unchecked Sendable {
     
     private let call: Call
     
-    public init(callType: String, callId: String) {
+    public init(callType: String, callId: String, videoFilterToUse: VideoFilter?) {
         call = InjectedValues[\.streamVideo].call(
             callType: callType,
             callId: callId
         )
+        call.setVideoFilter(videoFilterToUse)
         if #available(iOS 14, *) {
             camera = Camera()
             imagesTask = Task {
