@@ -19,7 +19,7 @@ public class LobbyViewModel: ObservableObject, @unchecked Sendable {
     
     private let call: Call
     
-    public init(callType: String, callId: String, videoFilterToUse: VideoFilter?) {
+    public init(callType: String, callId: String, videoFilterToUse: VideoFilter? = nil) {
         call = InjectedValues[\.streamVideo].call(
             callType: callType,
             callId: callId
