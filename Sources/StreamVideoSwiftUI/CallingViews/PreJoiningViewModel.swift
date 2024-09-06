@@ -7,6 +7,21 @@ import Combine
 import StreamVideo
 import SwiftUI
 
+extension Publisher {
+    func asyncMap<T>(
+        _ transform: @escaping (Output) async -> T
+    ) -> Publishers.FlatMap<Future<T, Never>, Self> {
+        flatMap { value in
+            Future { promise in
+                Task {
+                    let output = await transform(value)
+                    promise(.success(output))
+                }
+            }
+        }
+    }
+}
+
 @MainActor
 public class LobbyViewModel: ObservableObject, @unchecked Sendable {
     private let camera: Any
@@ -19,16 +34,15 @@ public class LobbyViewModel: ObservableObject, @unchecked Sendable {
     
     private let call: Call
     
-    public init(callType: String, callId: String, videoFilterToUse: VideoFilter? = nil) {
+    public init(callType: String, callId: String, applyFilter: ((CIImage) async -> (CIImage))? = nil) {
         call = InjectedValues[\.streamVideo].call(
             callType: callType,
             callId: callId
         )
-        call.setVideoFilter(videoFilterToUse)
         if #available(iOS 14, *) {
             camera = Camera()
             imagesTask = Task {
-                await handleCameraPreviews()
+                await handleCameraPreviews(applyFilter: applyFilter)
             }
         } else {
             camera = NSObject()
@@ -39,15 +53,20 @@ public class LobbyViewModel: ObservableObject, @unchecked Sendable {
     }
     
     @available(iOS 14, *)
-    func handleCameraPreviews() async {
-        let imageStream = (camera as? Camera)?.previewStream.dropFirst()
-            .map(\.image)
-        
-        guard let imageStream = imageStream else { return }
-
-        for await image in imageStream {
+    func handleCameraPreviews(applyFilter: ((CIImage) async -> (CIImage))? = nil) async {
+        guard let previewStream = (camera as? Camera)?.previewStream else { return }
+            
+        for await ciImage in previewStream.dropFirst() {
+            let processedImage: CIImage
+            
+            if let applyFilter = applyFilter {
+                processedImage = await applyFilter(ciImage)
+            } else {
+                processedImage = ciImage
+            }
+            
             await MainActor.run {
-                viewfinderImage = image
+                viewfinderImage = processedImage.image
             }
         }
     }
