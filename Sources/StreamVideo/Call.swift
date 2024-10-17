@@ -135,8 +135,6 @@ public class Call: @unchecked Sendable, WSEventsSubscriber {
                             guard let self else { throw ClientError.Unexpected() }
                             let response = try await callController.joinCall(
                                 create: create,
-                                callType: callType,
-                                callId: callId,
                                 callSettings: callSettings,
                                 options: options,
                                 ring: ring,
@@ -184,7 +182,8 @@ public class Call: @unchecked Sendable, WSEventsSubscriber {
             id: callId,
             membersLimit: membersLimit,
             ring: ring,
-            notify: notify
+            notify: notify,
+            video: nil
         )
         await state.update(from: response)
         if ring {
@@ -502,7 +501,7 @@ public class Call: @unchecked Sendable, WSEventsSubscriber {
 
         cancellables.removeAll()
         eventHandlers.removeAll()
-        callController.cleanUp()
+        callController.leave()
         try? stateMachine.transition(.idle(self))
         /// Upon `Call.leave` we remove the call from the cache. Any further actions that are required
         /// to happen on the call object (e.g. rejoin) will need to fetch a new instance from `StreamVideo`
@@ -821,11 +820,20 @@ public class Call: @unchecked Sendable, WSEventsSubscriber {
             sort: sort,
             type: callType
         )
-        let response = try await coordinatorClient.queryMembers(queryMembersRequest: request)
+        let response = try await coordinatorClient.queryCallMembers(queryMembersRequest: request)
         await state.mergeMembers(response.members)
         return response
     }
 
+    /// Queries call members with the specified filters, sort options, and limit.
+    ///
+    /// - Parameters:
+    ///   - filters: An optional dictionary of filters.
+    ///   - sort: An optional array of `SortParamRequest` that determines the sorting order of the results. Defaults to sorting by `created_at` in descending order.
+    ///   - limit: The maximum number of members to return. Defaults to 25.
+    ///
+    /// - Returns: A `QueryMembersResponse` containing the results of the query.
+    /// - Throws: An error if the query fails.
     public func queryMembers(
         filters: [String: RawJSON]? = nil,
         sort: [SortParamRequest] = [SortParamRequest.descending("created_at")],
@@ -834,8 +842,23 @@ public class Call: @unchecked Sendable, WSEventsSubscriber {
         try await queryMembers(filters: filters, limit: limit, sort: sort)
     }
 
-    public func queryMembers(next: String) async throws -> QueryMembersResponse {
-        try await queryMembers(filters: nil, limit: nil, next: next, sort: nil)
+    /// Asynchronously queries members with pagination support, using filters, sort options, and limit.
+    ///
+    /// - Parameters:
+    ///   - filters: An optional dictionary of filters.
+    ///   - sort: An optional array of `SortParamRequest` that determines the sorting order of the results.
+    ///   - limit: The maximum number of members to return. Defaults to 25.
+    ///   - next: A `String` representing the pagination token to fetch the next set of results.
+    ///
+    /// - Returns: A `QueryMembersResponse` containing the results of the query.
+    /// - Throws: An error if the query fails.
+    public func queryMembers(
+        filters: [String: RawJSON]? = nil,
+        sort: [SortParamRequest]? = nil,
+        limit: Int = 25,
+        next: String
+    ) async throws -> QueryMembersResponse {
+        try await queryMembers(filters: filters, limit: limit, next: next, sort: sort)
     }
 
     // MARK: - Pinning
@@ -916,8 +939,8 @@ public class Call: @unchecked Sendable, WSEventsSubscriber {
     ///
     /// - Note: Ensure that the device supports tap to focus and that it is enabled before calling this
     /// method. Otherwise, it might result in an error.
-    public func focus(at point: CGPoint) throws {
-        try callController.focus(at: point)
+    public func focus(at point: CGPoint) async throws {
+        try await callController.focus(at: point)
     }
 
     /// Adds the `AVCapturePhotoOutput` on the `CameraVideoCapturer` to enable photo
@@ -937,8 +960,8 @@ public class Call: @unchecked Sendable, WSEventsSubscriber {
     /// will be thrown to indicate that the operation is not supported.
     ///
     /// - Warning: A maximum of one output of each type may be added.
-    public func addCapturePhotoOutput(_ capturePhotoOutput: AVCapturePhotoOutput) throws {
-        try callController.addCapturePhotoOutput(capturePhotoOutput)
+    public func addCapturePhotoOutput(_ capturePhotoOutput: AVCapturePhotoOutput) async throws {
+        try await callController.addCapturePhotoOutput(capturePhotoOutput)
     }
 
     /// Removes the `AVCapturePhotoOutput` from the `CameraVideoCapturer` to disable photo
@@ -963,8 +986,8 @@ public class Call: @unchecked Sendable, WSEventsSubscriber {
     /// - Note: Ensure that the `AVCapturePhotoOutput` being removed was previously added to the
     /// `CameraVideoCapturer`. Attempting to remove an output that is not currently added will not
     /// affect the capture session but may result in unnecessary processing.
-    public func removeCapturePhotoOutput(_ capturePhotoOutput: AVCapturePhotoOutput) throws {
-        try callController.removeCapturePhotoOutput(capturePhotoOutput)
+    public func removeCapturePhotoOutput(_ capturePhotoOutput: AVCapturePhotoOutput) async throws {
+        try await callController.removeCapturePhotoOutput(capturePhotoOutput)
     }
 
     /// Adds an `AVCaptureVideoDataOutput` to the `CameraVideoCapturer` for video frame
@@ -990,8 +1013,8 @@ public class Call: @unchecked Sendable, WSEventsSubscriber {
     /// account as it can result in delayed fames delivery**. Given that WebRTC adds a videoOutput
     /// for frame processing, we cannot accept videoOutputs on versions prior to iOS 16.0.
     @available(iOS 16.0, *)
-    public func addVideoOutput(_ videoOutput: AVCaptureVideoDataOutput) throws {
-        try callController.addVideoOutput(videoOutput)
+    public func addVideoOutput(_ videoOutput: AVCaptureVideoDataOutput) async throws {
+        try await callController.addVideoOutput(videoOutput)
     }
 
     /// Removes an `AVCaptureVideoDataOutput` from the `CameraVideoCapturer` to disable
@@ -1018,8 +1041,8 @@ public class Call: @unchecked Sendable, WSEventsSubscriber {
     /// not part of the capture session will have no negative impact but could lead to unnecessary processing
     /// and confusion.
     @available(iOS 16.0, *)
-    public func removeVideoOutput(_ videoOutput: AVCaptureVideoDataOutput) throws {
-        try callController.removeVideoOutput(videoOutput)
+    public func removeVideoOutput(_ videoOutput: AVCaptureVideoDataOutput) async throws {
+        try await callController.removeVideoOutput(videoOutput)
     }
 
     /// Zooms the camera video by the specified factor.
@@ -1040,8 +1063,8 @@ public class Call: @unchecked Sendable, WSEventsSubscriber {
     ///
     /// - Note: This method should be used cautiously, as setting a zoom factor significantly beyond the
     /// optimal range can degrade video quality.
-    public func zoom(by factor: CGFloat) throws {
-        try callController.zoom(by: factor)
+    public func zoom(by factor: CGFloat) async throws {
+        try await callController.zoom(by: factor)
     }
 
     /// Starts transcribing a conversation, optionally specifying an external storage location.
@@ -1086,7 +1109,7 @@ public class Call: @unchecked Sendable, WSEventsSubscriber {
     @discardableResult
     @MainActor
     public func collectUserFeedback(
-        rating: Int? = nil,
+        rating: Int,
         reason: String? = nil,
         custom: [String: RawJSON]? = nil
     ) async throws -> CollectUserFeedbackResponse {
@@ -1109,6 +1132,25 @@ public class Call: @unchecked Sendable, WSEventsSubscriber {
         with sortComparators: [StreamSortComparator<CallParticipant>]
     ) {
         state.sortComparators = sortComparators
+    }
+
+    // MARK: - IncomingVideoQualitySettings
+
+    /// Sets the incoming video quality settings. This function updates the state and informs the internal
+    /// components about the new video policy asynchronously.
+    ///
+    /// - Parameter value: The new `IncomingVideoQualitySettings` to be applied. It
+    ///   determine whether video streams are allowed, manually controlled, or disabled for
+    ///   specific session groups.
+    @MainActor
+    public func setIncomingVideoQualitySettings(
+        _ value: IncomingVideoQualitySettings
+    ) async {
+        // Update the state with the new incoming video policy.
+        state.incomingVideoQualitySettings = value
+
+        // Informs the call controller to apply the new incoming video policy.
+        await callController.setIncomingVideoQualitySettings(value)
     }
 
     // MARK: - Internal
@@ -1145,6 +1187,14 @@ public class Call: @unchecked Sendable, WSEventsSubscriber {
         let eventHandlers = self.eventHandlers
         for eventHandler in eventHandlers {
             eventHandler.handler(event)
+        }
+    }
+
+    func transitionDueToError(_ error: Error) {
+        do {
+            try stateMachine.transition(.error(self, error: error))
+        } catch {
+            log.error(error)
         }
     }
 
@@ -1194,7 +1244,7 @@ public class Call: @unchecked Sendable, WSEventsSubscriber {
                 .state
                 .$ownCapabilities
                 .removeDuplicates()
-                .sink { [weak self] in self?.callController.updateOwnCapabilities(ownCapabilities: $0) }
+                .sinkTask { [weak self] in await self?.callController.updateOwnCapabilities(ownCapabilities: $0) }
                 .store(in: cancellables)
         }
     }
@@ -1282,7 +1332,7 @@ public class Call: @unchecked Sendable, WSEventsSubscriber {
 
     /// Handles updates to noise cancellation settings.
     /// - Parameter value: The updated `NoiseCancellationSettings` value.
-    private func didUpdate(_ value: NoiseCancellationSettings?) {
+    private func didUpdate(_ value: NoiseCancellationSettingsRequest?) {
         guard let noiseCancellationFilter = streamVideo.videoConfig.noiseCancellationFilter else {
             log
                 .warning(

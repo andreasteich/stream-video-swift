@@ -189,7 +189,7 @@ public class StreamVideo: ObservableObject, @unchecked Sendable {
                 } catch {
                     log.error("Error connecting as guest", error: error)
                 }
-            } else {
+            } else if user.type != .anonymous {
                 do {
                     try Task.checkCancellation()
                     try await self.connectUser(isInitial: true)
@@ -557,9 +557,12 @@ public class StreamVideo: ObservableObject, @unchecked Sendable {
         name: String,
         isVoip: Bool
     ) async throws -> ModelResponse {
+        guard let provider = CreateDeviceRequest.PushProvider(rawValue: pushProvider.rawValue) else {
+            throw ClientError.Unexpected("Invalid push provider value")
+        }
         let createDeviceRequest = CreateDeviceRequest(
             id: id,
-            pushProvider: .init(rawValue: pushProvider.rawValue),
+            pushProvider: provider,
             pushProviderName: name,
             voipToken: isVoip
         )

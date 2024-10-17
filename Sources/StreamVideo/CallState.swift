@@ -124,7 +124,12 @@ public class CallState: ObservableObject {
     @Published public internal(set) var isCurrentUserScreensharing: Bool = false
     @Published public internal(set) var duration: TimeInterval = 0
     @Published public internal(set) var statsReport: CallStatsReport?
-    
+
+    /// A public enum representing the settings for incoming video streams in a WebRTC
+    /// session. This enum supports different policies like none, manual, or
+    /// disabled, each potentially applying to specific session IDs.
+    @Published public internal(set) var incomingVideoQualitySettings: IncomingVideoQualitySettings = .none
+
     var sortComparators = defaultComparators
     
     private var localCallSettingsUpdate = false
@@ -208,6 +213,8 @@ public class CallState: ObservableObject {
         case .typeHealthCheckEvent:
             // note: health checks are not relevant for call state sync'ing
             break
+        case .typeCallUserMutedEvent:
+            break
         case .typeCallDeletedEvent:
             break
         case .typeCallHLSBroadcastingFailedEvent:
@@ -232,11 +239,11 @@ public class CallState: ObservableObject {
             break
         case .typeCallRtmpBroadcastStoppedEvent:
             break
-        case .typeCallUserMutedEvent:
-            break
         case .typeCallRtmpBroadcastFailedEvent:
             break
         case .typeCallSessionParticipantCountsUpdatedEvent:
+            break
+        case .typeUserUpdatedEvent:
             break
         }
     }
