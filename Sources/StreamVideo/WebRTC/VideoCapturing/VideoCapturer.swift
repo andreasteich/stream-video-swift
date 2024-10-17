@@ -93,32 +93,34 @@ class VideoCapturer: CameraVideoCapturing {
                 } else {
                     self?.videoCaptureHandler?.currentCameraPosition = device.position
                     continuation.resume(returning: ())
+                    
+                    print("Started")
+                    
+                    videoCapturer.captureSession.beginConfiguration()
+
+                    // Erstelle und konfiguriere den videoDataOutput
+                    let videoOutput = AVCaptureVideoDataOutput()
+
+                    // Füge die Ausgabe zur Sitzung hinzu, bevor du die Verbindung abfragst
+                    if videoCapturer.captureSession.canAddOutput(videoOutput) {
+                        videoCapturer.captureSession.addOutput(videoOutput)
+                        print("Videoausgabe hinzugefügt")
+                    } else {
+                        print("Konnte Videoausgabe nicht hinzufügen")
+                    }
+
+                    // Jetzt, da die Ausgabe hinzugefügt ist, kann die Verbindung abgerufen werden
+                    if let captureConnection = videoOutput.connection(with: .video) {
+                        captureConnection.isEnabled = true
+                        captureConnection.isCameraIntrinsicMatrixDeliveryEnabled = true
+                        print("Videoverbindung aktiviert und Konfiguration abgeschlossen")
+                    } else {
+                        print("Keine Videoverbindung verfügbar")
+                    }
+
+                    videoCapturer.captureSession.commitConfiguration()
                 }
             }
-            
-            videoCapturer.captureSession.beginConfiguration()
-
-            // Erstelle und konfiguriere den videoDataOutput
-            let videoOutput = AVCaptureVideoDataOutput()
-
-            // Füge die Ausgabe zur Sitzung hinzu, bevor du die Verbindung abfragst
-            if videoCapturer.captureSession.canAddOutput(videoOutput) {
-                videoCapturer.captureSession.addOutput(videoOutput)
-                print("Videoausgabe hinzugefügt")
-            } else {
-                print("Konnte Videoausgabe nicht hinzufügen")
-            }
-
-            // Jetzt, da die Ausgabe hinzugefügt ist, kann die Verbindung abgerufen werden
-            if let captureConnection = videoOutput.connection(with: .video) {
-                captureConnection.isEnabled = true
-                captureConnection.isCameraIntrinsicMatrixDeliveryEnabled = true
-                print("Videoverbindung aktiviert und Konfiguration abgeschlossen")
-            } else {
-                print("Keine Videoverbindung verfügbar")
-            }
-
-            videoCapturer.captureSession.commitConfiguration()
         } as Void
     }
     
