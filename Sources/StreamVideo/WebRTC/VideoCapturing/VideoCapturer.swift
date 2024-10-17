@@ -59,9 +59,16 @@ class VideoCapturer: CameraVideoCapturing {
                 return
             }
             
-            if let output = videoCapturer.captureSession.outputs.first {
-                print(output)
+            videoCapturer.captureSession.beginConfiguration()
+
+            // Fügen Sie den videoDataOutput hinzu
+            let videoOutput = AVCaptureVideoDataOutput()
+            if videoCapturer.captureSession.canAddOutput(videoOutput) {
+                videoCapturer.captureSession.addOutput(videoOutput)
+                print("Hinzu")
             }
+
+            videoCapturer.captureSession.commitConfiguration()
             
             guard let device else {
                 continuation.resume(throwing: ClientError.Unexpected())
