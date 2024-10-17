@@ -94,14 +94,14 @@ class VideoCapturer: CameraVideoCapturing {
                     self?.videoCaptureHandler?.currentCameraPosition = device.position
                     continuation.resume(returning: ())
                     
-                    if let connection = videoCapturer.captureSession.outputs.first?.connection(with: .video) {
+                    /*if let connection = videoCapturer.captureSession.outputs.first?.connection(with: .video) {
                         print("Found!!")
                         print(connection)
                         
                         connection.isEnabled = true
                         connection.isCameraIntrinsicMatrixDeliveryEnabled = true
                         print("Videoverbindung aktiviert und Konfiguration abgeschlossen")
-                    }
+                    }*/
                 }
             }
         } as Void
