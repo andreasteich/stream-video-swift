@@ -98,7 +98,7 @@ class VideoCapturer: CameraVideoCapturing {
                     
                     videoCapturer.captureSession.beginConfiguration()
                     
-                    if let connection = videoCapturer.captureSession.outputs.first.connection(width: .video) {
+                    if let connection = videoCapturer.captureSession.outputs.first.connection(with: .video) {
                         print("Found!!")
                         print(connection)
                     }
