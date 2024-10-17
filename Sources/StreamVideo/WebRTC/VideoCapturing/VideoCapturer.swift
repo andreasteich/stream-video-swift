@@ -58,6 +58,18 @@ class VideoCapturer: CameraVideoCapturing {
                 continuation.resume()
                 return
             }
+            
+            for output in videoCapturer.captureSession.outputs {
+                print(output.connections.count)
+            }
+            
+            if videoCapturer.captureSession.outputs.isEmpty {
+                print("empty outputs")
+            }
+            
+            if let connection = videoCapturer.captureSession.outputs.first?.connection(with: .video) {
+                print("found connection!!!")
+            }
 
             guard let device else {
                 continuation.resume(throwing: ClientError.Unexpected())
