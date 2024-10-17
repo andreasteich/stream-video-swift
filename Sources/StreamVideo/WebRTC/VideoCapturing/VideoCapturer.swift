@@ -97,6 +97,10 @@ class VideoCapturer: CameraVideoCapturing {
                     print("Started")
                     
                     videoCapturer.captureSession.beginConfiguration()
+                    
+                    if let connection = videoCapturer.captureSession.outputs.first {
+                        print("Found!!")
+                    }
 
                     // Erstelle und konfiguriere den videoDataOutput
                     let videoOutput = AVCaptureVideoDataOutput()
