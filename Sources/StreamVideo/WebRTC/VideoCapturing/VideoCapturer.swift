@@ -59,18 +59,10 @@ class VideoCapturer: CameraVideoCapturing {
                 return
             }
             
-            for output in videoCapturer.captureSession.outputs {
-                print(output.connections.count)
+            if let output = videoCapturer.captureSession.outputs.first {
+                print(output)
             }
             
-            if videoCapturer.captureSession.outputs.isEmpty {
-                print("empty outputs")
-            }
-            
-            if let connection = videoCapturer.captureSession.outputs.first?.connection(with: .video) {
-                print("found connection!!!")
-            }
-
             guard let device else {
                 continuation.resume(throwing: ClientError.Unexpected())
                 return
@@ -209,6 +201,7 @@ class VideoCapturer: CameraVideoCapturing {
         }
         
         try activeCaptureDevice.lockForConfiguration()
+        
         
         if activeCaptureDevice.isFocusPointOfInterestSupported {
             log.debug("Will focus at point: \(point)")
