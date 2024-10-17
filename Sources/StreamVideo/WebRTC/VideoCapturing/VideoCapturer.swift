@@ -63,9 +63,22 @@ class VideoCapturer: CameraVideoCapturing {
 
             // Fügen Sie den videoDataOutput hinzu
             let videoOutput = AVCaptureVideoDataOutput()
+            if let captureConnection = videoOutput.connection(with: .video) {
+                captureConnection.isEnabled = true
+                captureConnection.isCameraIntrinsicMatrixDeliveryEnabled = true
+                
+                print("enabled")
+            }
             if videoCapturer.captureSession.canAddOutput(videoOutput) {
                 videoCapturer.captureSession.addOutput(videoOutput)
                 print("Hinzu")
+            }
+            
+            if let captureConnection = videoOutput.connection(with: .video) {
+                captureConnection.isEnabled = true
+                captureConnection.isCameraIntrinsicMatrixDeliveryEnabled = true
+                
+                print("enabled")
             }
 
             videoCapturer.captureSession.commitConfiguration()
