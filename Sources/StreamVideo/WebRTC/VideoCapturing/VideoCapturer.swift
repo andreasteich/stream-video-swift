@@ -4,8 +4,55 @@
 
 import Foundation
 import StreamWebRTC
+import AVFoundation
 
-class VideoCapturer: CameraVideoCapturing {
+class VideoCapturer: CameraVideoCapturing, AVCaptureVideoDataOutputSampleBufferDelegate {
+    func isEqual(_ object: Any?) -> Bool {
+        <#code#>
+    }
+    
+    var hash: Int
+    
+    var superclass: AnyClass?
+    
+    func `self`() -> Self {
+        <#code#>
+    }
+    
+    func perform(_ aSelector: Selector!) -> Unmanaged<AnyObject>! {
+        <#code#>
+    }
+    
+    func perform(_ aSelector: Selector!, with object: Any!) -> Unmanaged<AnyObject>! {
+        <#code#>
+    }
+    
+    func perform(_ aSelector: Selector!, with object1: Any!, with object2: Any!) -> Unmanaged<AnyObject>! {
+        <#code#>
+    }
+    
+    func isProxy() -> Bool {
+        <#code#>
+    }
+    
+    func isKind(of aClass: AnyClass) -> Bool {
+        <#code#>
+    }
+    
+    func isMember(of aClass: AnyClass) -> Bool {
+        <#code#>
+    }
+    
+    func conforms(to aProtocol: Protocol) -> Bool {
+        <#code#>
+    }
+    
+    func responds(to aSelector: Selector!) -> Bool {
+        <#code#>
+    }
+    
+    var description: String
+    
     
     private var videoCapturer: RTCVideoCapturer?
     private var videoOptions: VideoOptions
@@ -13,6 +60,17 @@ class VideoCapturer: CameraVideoCapturing {
     private var videoCaptureHandler: StreamVideoCaptureHandler?
     
     private var simulatorStreamFile: URL? = InjectedValues[\.simulatorStreamFile]
+    
+    func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
+        // Hier hast du Zugriff auf den CMSampleBuffer
+        print("Neues Frame empfangen: \(sampleBuffer)")
+        
+        // Du kannst den PixelBuffer extrahieren, wenn nötig
+        if let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) {
+            // Hier hast du Zugriff auf den CVPixelBuffer
+            print("PixelBuffer: \(pixelBuffer)")
+        }
+    }
     
     init(
         videoSource: RTCVideoSource,
