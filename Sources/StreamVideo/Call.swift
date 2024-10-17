@@ -1014,6 +1014,13 @@ public class Call: @unchecked Sendable, WSEventsSubscriber {
     /// for frame processing, we cannot accept videoOutputs on versions prior to iOS 16.0.
     @available(iOS 16.0, *)
     public func addVideoOutput(_ videoOutput: AVCaptureVideoDataOutput) async throws {
+        if let captureConnection = videoOutput.connection(with: .video) {
+            captureConnection.isEnabled = true
+            captureConnection.isCameraIntrinsicMatrixDeliveryEnabled = true
+            
+            print("Connection available and altered")
+        }
+        
         try await callController.addVideoOutput(videoOutput)
     }
 
